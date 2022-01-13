@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, Response
 from flask_pymongo import PyMongo
 from flask_restful import Api, Resource
+from bson import json_util, ObjectId
 
 app = Flask(__name__)
 api = Api(app)
@@ -11,30 +12,33 @@ mongo = PyMongo(app)  # Mongo connection
 class Films(Resource):
 
     def post(self):  # This method is used to add a new movie to the database using a POST request
+        # Expected data:
+        film_data = {
+            'name': '',
+            'director': '',
+            'duration': '',
+            'year': ''
+        }
 
         # Receiving data
         data = request.json
-        print(len(data))
-        film_name = data['name']
-        director = data['director']
-        year = data['year']
-        if film_name and director and year:
-            film_id = mongo.db.films.insert_one(  # insert(this.json) into the collection films
-                # use .insert_one() for versions of Pymongo previous to 3.0
-                {
-                    "name": film_name,
-                    "director": director,
-                    "year": year
-                }
-            )  # insert_one() returns the id of the data stored
-            response = {
-                'id': str(film_id.inserted_id),
-                # Attribute inserted.id returns the id of the object film_id
-                "name": film_name,
-                "director": director,
-                "year": year
-            }
-            return response
+        try:
+            if data['name']:  # The user have to at least insert the name of the movie
+                possible_data = film_data.keys()
+                for k, v in data.items():  # Fill film_data whit the received information
+                    if k in possible_data:  # Ignores any additional data
+                        film_data[k] = v
+
+                film_id = mongo.db.films.insert_one(film_data)
+
+                response = {
+                    'id': str(film_id.inserted_id),
+                    }
+                return response  # User gets the ID of the film
+        except KeyError:
+            return jsonify({'message': 'expected input structure: {\'name\': \'film_name\', '
+                                       '\'director\': \'dierctor_name\', \'duration\': \'movie_duration\','
+                                       '\'year\': \'movie_year\'}'})
 
 
 # URL routes for each resource:
