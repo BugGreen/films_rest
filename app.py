@@ -10,7 +10,8 @@ mongo = PyMongo(app)  # Mongo connection
 
 class Films(Resource):
 
-    def post(self):
+    def post(self):  # This method is used to add a new movie to the database using a POST request
+
         # Receiving data
         data = request.json
         print(len(data))
@@ -37,7 +38,7 @@ class Films(Resource):
 
 
 # URL routes for each resource:
-api.add_resource(Films, '/api', endpoint='films')  # http://127.0.0.1:5000/api/films
+api.add_resource(Films, '/films/add_film/')  # http://127.0.0.1:5000/films/add_film/
 
 if __name__ == '__main__':
     app.run(debug=True)
