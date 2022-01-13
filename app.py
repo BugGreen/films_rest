@@ -9,15 +9,22 @@ app.config['MONGO_URI'] = 'mongodb://localhost:27017/films'  # Chain connection
 mongo = PyMongo(app)  # Mongo connection
 
 
-class Films(Resource):
+class BrowserFilm(Resource):  # Resource
+
+    def get(self):
+
+        film = mongo.db.films.find()  # Receives all films stored into the mongo db.
+
+        response = json_util.dumps(film)
+        return Response(response, mimetype='application/json')
 
     def post(self):  # This method is used to add a new movie to the database using a POST request
         # Expected data:
         film_data = {
-            'name': '',
-            'director': '',
-            'duration': '',
-            'year': ''
+            'name': None,
+            'director': None,
+            'duration': None,
+            'year': None
         }
 
         # Receiving data
@@ -37,12 +44,28 @@ class Films(Resource):
                 return response  # User gets the ID of the film
         except KeyError:
             return jsonify({'message': 'expected input structure: {\'name\': \'film_name\', '
-                                       '\'director\': \'dierctor_name\', \'duration\': \'movie_duration\','
+                                       '\'director\': \'director_name\', \'duration\': \'movie_duration\','
                                        '\'year\': \'movie_year\'}'})
 
 
-# URL routes for each resource:
-api.add_resource(Films, '/films/add_film/')  # http://127.0.0.1:5000/films/add_film/
+class BrowserFilmModifier(Resource):
+    def get(self, film_id):  # Allows user to access to a film_data by its id
+        film = mongo.db.films.find_one({'_id': ObjectId(film_id)})
+        if not film:
+            return {"response": "no film found for {}".format(film_id)}
+
+        response = json_util.dumps(film)
+        return Response(response, mimetype='application/json')
+
+    def delete(self, film_id):  # Allows user to delete a film of the database by its id
+        mongo.db.films.delete_one({'_id': ObjectId(film_id)})
+        response = jsonify({'message': 'Film {} was successfully deleted.'.format(film_id)})
+        return response
+
+
+api.add_resource(BrowserFilm, '/films-browser/')  # Resource BrowserFilm is associated with the route
+# APP_URL + /films-browser/
+api.add_resource(BrowserFilmModifier, '/films-browser/<string:film_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
